@@ -1,4 +1,9 @@
-import com.sun.star.awt.Rectangle;
+const quote = (string) => `"${string.replaceAll('\\', '\\\\').replaceAll('"', '\\"')}"`;
+const join = (timeout) => timeout > 0 ? `join(${timeout})` : 'join()';
+const write = (starts) => starts.length > 0 ? starts.map((args) => `start(new ProcessBuilder(${args.map(quote).join(', ')}));`).join('\n\t\t\t').concat('\n\n\t\t\twrite()') : 'write()';
+
+export const format = ({ port, IN, OUT, length, timeout, starts }) =>
+`import com.sun.star.awt.Rectangle;
 import com.sun.star.awt.WindowAttribute;
 import com.sun.star.awt.WindowClass;
 import com.sun.star.awt.WindowDescriptor;
@@ -39,12 +44,10 @@ import java.lang.Thread;
 import java.util.LinkedHashSet;
 
 public final class Main implements Runnable {
-	// TODO edit port
-	public static final String URL = "uno:socket,host=localhost,port=;urp;StarOffice.ServiceManager";
+	public static final String URL = "uno:socket,host=localhost,port=${port};urp;StarOffice.ServiceManager";
 
-	// TODO optional: edit
-	public static final String IN = "resume.odt";
-	public static final String OUT = "resume.pdf";
+	public static final String IN = ${quote(IN)};
+	public static final String OUT = ${quote(OUT)};
 
 	public final String keywords;
 	public boolean good;
@@ -81,7 +84,7 @@ public final class Main implements Runnable {
 		p.getOutputStream().close();
 
 		final InputStream in = p.getInputStream();
-		final byte[] b = new byte[/* TODO */];
+		final byte[] b = new byte[${length.shift()}];
 		while (in.read(b, 0, b.length) > 0) { }
 		in.close();
 
@@ -90,7 +93,7 @@ public final class Main implements Runnable {
 
 	public static final void write() throws IOException {
 		final FileInputStream in = new FileInputStream(OUT);
-		final byte[] b = new byte[/* TODO */];
+		final byte[] b = new byte[${length.shift()}];
 		int r = in.read(b, 0, b.length);
 
 		while (r > 0) {
@@ -183,22 +186,22 @@ public final class Main implements Runnable {
 		final Main main = new Main(getBookmark(keywords));
 		final Thread thread = new Thread(main);
 		thread.start();
-		thread.join(/* TODO optional: timeout */);
+		thread.${join(timeout)};
 
 		if (main.good) {
-			/* TODO optional post-processing:
-			 *
-			 * start(new ProcessBuilder(...));
-			 * start(new ProcessBuilder(...));
-			 * start(new ProcessBuilder(...));
-			 * ...
-			 *
-			 */
-
-			write();
+			${write(starts)};
 			System.exit(0);
 		} else {
 			System.exit(1);
 		}
 	}
 }
+`;
+
+export const command = (cwd, searchprog, basename, join, file) =>
+`export const COMMAND = '${searchprog('java')}'
+export const ARGS = ['-cp', '${cwd}:${join(searchprog('libreoffice'), '../classes/libreoffice.jar')}', '${basename(file, '.java')}']
+export const OPTIONS = {
+	cwd: '${cwd}',
+}
+`;
