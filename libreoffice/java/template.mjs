@@ -2,7 +2,41 @@ const quote = (string) => `"${string.replaceAll('\\', '\\\\').replaceAll('"', '\
 const join = (timeout) => timeout > 0 ? `join(${timeout})` : 'join()';
 const write = (starts) => starts.length > 0 ? starts.map((args) => `start(new ProcessBuilder(${args.map(quote).join(', ')}));`).join('\n\t\t\t').concat('\n\n\t\t\twrite()') : 'write()';
 
-export const format = ({ port, IN, OUT, length, timeout, starts }) =>
+export const read = (require, keys, context) => {
+	const { cwd, searchprog, join, string, uint16, starts } = context;
+
+	context.soffice = searchprog('libreoffice').replace(/soffice$/, 'soffice.bin');
+
+	context.java = searchprog('java');
+	context.javac = searchprog('javac');
+	context.jar = join(context.soffice, '../classes/libreoffice.jar');
+
+	context.config = require(join(cwd, 'config.json'));
+	keys(context.config, ['port', 'IN', 'OUT', 'length', 'timeout', 'starts']);
+
+	context.port = uint16(context.config.port);
+	context.URL = `uno:socket,host=localhost,port=${context.port};urp;StarOffice.ServiceManager`;
+
+	context.IN = string(context.config.IN) || 'resume.odt';
+	context.OUT = string(context.config.OUT) || 'resume.pdf';
+
+	if (!(context.config.length instanceof Array) || context.config.length.length !== 2) {
+		throw new TypeError('config: "length" is not an Array(2)');
+	}
+	context.length = context.config.length.map(uint16);
+	if (context.length.find((length) => length <= 0) !== undefined) {
+		throw new RangeError('config: "length" should be > 0');
+	}
+
+	context.timeout = uint16(context.config.timeout);
+	context.starts = starts(context.config.starts);
+
+	return context;
+};
+
+export const log = (context) => ['soffice', 'java', 'javac', 'jar', 'port', 'URL', 'IN', 'OUT', 'length', 'timeout', 'starts'].forEach((key) => key === 'starts' ? context[key].forEach((start, i) => console.log(`starts[${i}] = ${start}`)) : console.log(`${key} = ${context[key]}`));
+
+export const format = ({ URL, IN, OUT, length, timeout, starts }) =>
 `import com.sun.star.awt.Rectangle;
 import com.sun.star.awt.WindowAttribute;
 import com.sun.star.awt.WindowClass;
@@ -44,7 +78,7 @@ import java.lang.Thread;
 import java.util.LinkedHashSet;
 
 public final class Main implements Runnable {
-	public static final String URL = "uno:socket,host=localhost,port=${port};urp;StarOffice.ServiceManager";
+	public static final String URL = ${quote(URL)};
 
 	public static final String IN = ${quote(IN)};
 	public static final String OUT = ${quote(OUT)};
@@ -198,10 +232,20 @@ public final class Main implements Runnable {
 }
 `;
 
-export const command = (cwd, searchprog, basename, join, file) =>
-`export const COMMAND = '${searchprog('java')}'
-export const ARGS = ['-cp', '${cwd}:${join(searchprog('libreoffice'), '../classes/libreoffice.jar')}', '${basename(file, '.java')}']
+export const command = ({ cwd, file, basename, java, jar }) =>
+`export const COMMAND = '${java}'
+export const ARGS = ['-cp', '${cwd}:${jar}', '${basename(file, '.java')}']
 export const OPTIONS = {
 	cwd: '${cwd}',
 }
 `;
+
+export const compile = ({ cwd, file, join, javac, jar }) => ({
+	COMMAND: javac,
+	ARGS: ['-cp', `${cwd}:${jar}`, join(cwd, file)],
+});
+
+export const serve = ({ soffice, URL }) => ({
+	COMMAND: soffice,
+	ARGS: [`--accept=${URL.slice(4)}`, '--nologo'],
+});
