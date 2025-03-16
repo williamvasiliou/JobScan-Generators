@@ -61,17 +61,17 @@ int main() {
 			++it;
 		}
 
-		*(keywords + (size - length - sizeof(uint16_t))) = length;
+		*(uint16_t *) (keywords + (size - length - sizeof(uint16_t))) = length;
 	}
 	free(line);
 
 	fputs(header, stdout);
 	if (size >= sizeof(uint16_t)) {
 		nread = 0;
-		length = *((uint16_t *) (keywords));
+		length = *(uint16_t *) keywords;
 		it = (char *) (keywords + sizeof(uint16_t));
-		while (nread < length) {
-			putchar(*it);
+		while ((uint16_t) nread < length) {
+			fputc(*it, stdout);
 
 			++it;
 			++nread;
@@ -79,14 +79,14 @@ int main() {
 
 		n = length + sizeof(uint16_t);
 		while (n < size) {
-			putchar(',');
-			putchar(' ');
+			fputc(',', stdout);
+			fputc(' ', stdout);
 
 			nread = 0;
-			length = *((uint16_t *) (keywords + n));
+			length = *(uint16_t *) (keywords + n);
 			it = (char *) (keywords + n + sizeof(uint16_t));
-			while (nread < length) {
-				putchar(*it);
+			while ((uint16_t) nread < length) {
+				fputc(*it, stdout);
 
 				++it;
 				++nread;
@@ -95,7 +95,7 @@ int main() {
 			n += length + sizeof(uint16_t);
 		}
 
-		putchar('\n');
+		fputc('\n', stdout);
 	}
 	fputs(footer, stdout);
 
