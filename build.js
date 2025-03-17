@@ -3,6 +3,10 @@ const { basename, join, relative } = require('node:path');
 const { argv, cwd, env, exit } = require('node:process');
 
 const targets = {
+	'libreoffice/cxx': {
+		directory: 'libreoffice/cxx',
+		file: 'Main.cxx',
+	},
 	'libreoffice/java': {
 		directory: 'libreoffice/java',
 		file: 'Main.java',
