@@ -28,7 +28,7 @@ export const read = (require, keys, context) => {
 	return context;
 };
 
-export const log = (context) => ['soffice', 'python', 'port', 'URL', 'IN', 'OUT', 'length', 'timeout', 'starts'].forEach((key) => key === 'starts' ? context[key].forEach((start, i) => console.log(`starts[${i}] = ${start}`)) : console.log(`${key} = ${context[key]}`));
+export const log = (context) => ['soffice', 'python', 'port', 'URL', 'IN', 'OUT', 'length', 'timeout', 'starts'].forEach((key) => key === 'starts' ? context[key].forEach((start, i) => console.log(`starts[${i}] = ${start.join(' ')}`)) : console.log(`${key} = ${context[key]}`));
 
 export const format = ({ URL, IN, OUT, length, timeout, starts }) =>
 `#!/usr/bin/env python3
@@ -111,14 +111,14 @@ def main(keywords, good):
 
     desktop.getFrames().append(frame)
     frame.setName('newly created 1')
-    template_component = desktop.loadComponentFromURL(Path(IN).resolve().as_uri().replace('\\', '/'), 'newly created 1', FrameSearchFlag.CHILDREN, tuple())
+    template_component = desktop.loadComponentFromURL(Path(IN).resolve().as_uri().replace('\\\\', '/'), 'newly created 1', FrameSearchFlag.CHILDREN, tuple())
     window.setVisible(0)
 
     named_bookmarks = template_component.getBookmarks()
     bookmark = named_bookmarks.getByName('Keywords')
     bookmark.getAnchor().setString(keywords)
 
-    outURL = Path(OUT).resolve().as_uri().replace('\\', '/')
+    outURL = Path(OUT).resolve().as_uri().replace('\\\\', '/')
     property_value = (PropertyValue(), PropertyValue())
     property_value[0].Name = 'FilterName'
     property_value[0].Value = 'writer_pdf_Export'

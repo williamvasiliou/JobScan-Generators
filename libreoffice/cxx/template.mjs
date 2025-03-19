@@ -16,14 +16,14 @@ export const read = (require, keys, context) => {
 
 	switch (context.os) {
 		case 'Darwin':
+			context.cc = searchprog('clang++');
 			context.includes = '-I/usr/include/libreoffice';
 			context.defines = '-DUNX -DGCC -DMACOSX -DCPPU_ENV=gcc3';
-			context.cc = searchprog('clang++');
 			break;
 		case 'Windows_NT':
+			context.cc = searchprog('cl');
 			context.includes = '-I.';
 			context.defines = `-DWIN32 -DWNT -D_DLL -DCPPU_ENV=${machine() == 'x86_64' ? 'mscx' : 'msci'}`;
-			context.cc = searchprog('cl');
 			break;
 		default:
 			context.cc = searchprog('g++');
@@ -55,7 +55,7 @@ export const read = (require, keys, context) => {
 	return context;
 };
 
-export const log = (context) => ['os', 'soffice', 'sdklib', 'offapi', 'cc', 'cflags', 'includes', 'ldflags', 'defines', 'port', 'URL', 'IN', 'OUT', 'length', 'timeout', 'starts'].forEach((key) => key === 'starts' ? context[key].forEach((start, i) => console.log(`starts[${i}] = ${start}`)) : console.log(`${key} = ${context[key]}`));
+export const log = (context) => ['os', 'soffice', 'sdklib', 'offapi', 'cc', 'cflags', 'includes', 'ldflags', 'defines', 'port', 'URL', 'IN', 'OUT', 'length', 'timeout', 'starts'].forEach((key) => key === 'starts' ? context[key].forEach((start, i) => console.log(`starts[${i}] = ${start.join(' ')}`)) : console.log(`${key} = ${context[key]}`));
 
 export const format = ({ URL, IN, OUT, length, timeout, starts }) =>
 `#include <chrono>

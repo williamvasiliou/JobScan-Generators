@@ -36,68 +36,110 @@ static bool add(char c) {
 	return true;
 }
 
-#ifdef KEYWORDS_IMPLEMENT_MAIN
-int main() {
-	keywords = (uint8_t *) calloc(capacity, sizeof(uint8_t));
-	if (!keywords) {
-		exit(EXIT_FAILURE);
-	}
-
-	while ((nread = getline(&line, &n, stdin)) != -1) {
-		length = 0;
-		add(0);
-		add(0);
-
-		it = line;
-		while ((c = *it) != 0) {
-			if (c != '\n') {
-				if (!add(c) || !(++length)) {
-					free(line);
-					free(keywords);
-					exit(EXIT_FAILURE);
-				}
-			}
-
-			++it;
-		}
-
-		*(uint16_t *) (keywords + (size - length - sizeof(uint16_t))) = length;
-	}
+#define KEYWORDS_READ(stream) \
+	keywords = (uint8_t *) calloc(capacity, sizeof(uint8_t)); \
+	if (!keywords) { \
+		exit(EXIT_FAILURE); \
+	} \
+ \
+	while ((nread = getline(&line, &n, stream)) != -1) { \
+		length = 0; \
+		add(0); \
+		add(0); \
+ \
+		it = line; \
+		while ((c = *it) != 0) { \
+			if (c != '\n') { \
+				if (!add(c) || !(++length)) { \
+					free(line); \
+					free(keywords); \
+					exit(EXIT_FAILURE); \
+				} \
+			} \
+ \
+			++it; \
+		} \
+ \
+		*(uint16_t *) (keywords + (size - length - sizeof(uint16_t))) = length; \
+	} \
 	free(line);
 
-	fputs(HEADER, stdout);
-	if (size >= sizeof(uint16_t)) {
-		nread = 0;
-		length = *(uint16_t *) keywords;
-		it = (char *) (keywords + sizeof(uint16_t));
-		while ((uint16_t) nread < length) {
-			fputc(*it, stdout);
+#ifdef KEYWORDS_BEGIN
+#define KEYWORDS_WRITE_BEGIN(stream) KEYWORDS_BEGIN(stream)
+#else
+#define KEYWORDS_WRITE_BEGIN(stream)
+#endif // KEYWORDS_BEGIN
 
-			++it;
-			++nread;
-		}
+#ifdef KEYWORDS_END
+#define KEYWORDS_WRITE_END(stream) KEYWORDS_END(stream)
+#else
+#define KEYWORDS_WRITE_END(stream) fputc('\n', stream);
+#endif // KEYWORDS_END
 
-		n = length + sizeof(uint16_t);
-		while (n < size) {
-			fputc(',', stdout);
-			fputc(' ', stdout);
+#ifdef KEYWORDS_LEFT
+#define KEYWORDS_WRITE_LEFT(stream) fputs(KEYWORDS_LEFT, stream);
+#else
+#define KEYWORDS_WRITE_LEFT(stream)
+#endif // KEYWORDS_LEFT
 
-			nread = 0;
-			length = *(uint16_t *) (keywords + n);
-			it = (char *) (keywords + n + sizeof(uint16_t));
-			while ((uint16_t) nread < length) {
-				fputc(*it, stdout);
+#ifdef KEYWORDS_RIGHT
+#define KEYWORDS_WRITE_RIGHT(stream) fputs(KEYWORDS_RIGHT, stream);
+#else
+#define KEYWORDS_WRITE_RIGHT(stream)
+#endif // KEYWORDS_RIGHT
 
-				++it;
-				++nread;
-			}
+#ifdef KEYWORDS_SEPARATOR
+#define KEYWORDS_WRITE_SEPARATOR(stream) fputs(KEYWORDS_SEPARATOR, stream);
+#else
+#define KEYWORDS_WRITE_SEPARATOR(stream) \
+	fputc(',', stream); \
+	fputc(' ', stream);
+#endif // KEYWORDS_SEPARATOR
 
-			n += length + sizeof(uint16_t);
-		}
+#define KEYWORDS_WRITE(stream) \
+	fputs(HEADER, stream); \
+	if (size >= sizeof(uint16_t)) { \
+		KEYWORDS_WRITE_BEGIN(stream) \
+ \
+		KEYWORDS_WRITE_LEFT(stream) \
+		nread = 0; \
+		length = *(uint16_t *) keywords; \
+		it = (char *) (keywords + sizeof(uint16_t)); \
+		while ((uint16_t) nread < length) { \
+			fputc(*it, stream); \
+ \
+			++it; \
+			++nread; \
+		} \
+		KEYWORDS_WRITE_RIGHT(stream) \
+ \
+		n = length + sizeof(uint16_t); \
+		while (n < size) { \
+			KEYWORDS_WRITE_SEPARATOR(stream) \
+ \
+			KEYWORDS_WRITE_LEFT(stream) \
+			nread = 0; \
+			length = *(uint16_t *) (keywords + n); \
+			it = (char *) (keywords + n + sizeof(uint16_t)); \
+			while ((uint16_t) nread < length) { \
+				fputc(*it, stream); \
+ \
+				++it; \
+				++nread; \
+			} \
+			KEYWORDS_WRITE_RIGHT(stream) \
+ \
+			n += length + sizeof(uint16_t); \
+		} \
+ \
+		KEYWORDS_WRITE_END(stream) \
+	} \
+	fputs(FOOTER, stream);
 
-		fputc('\n', stdout);
-	}
-	fputs(FOOTER, stdout);
+#ifdef KEYWORDS_IMPLEMENT_MAIN
+int main() {
+	KEYWORDS_READ(stdin)
+	KEYWORDS_WRITE(stdout)
 
 	free(keywords);
 	exit(EXIT_SUCCESS);
@@ -110,70 +152,13 @@ static void read() {
 		capacity = 128;
 	}
 
-	keywords = (uint8_t *) calloc(capacity, sizeof(uint8_t));
-	if (!keywords) {
-		exit(EXIT_FAILURE);
-	}
-
 	line = NULL;
 	n = 0;
-	while ((nread = getline(&line, &n, stdin)) != -1) {
-		length = 0;
-		add(0);
-		add(0);
-
-		it = line;
-		while ((c = *it) != 0) {
-			if (c != '\n') {
-				if (!add(c) || !(++length)) {
-					free(line);
-					free(keywords);
-					exit(EXIT_FAILURE);
-				}
-			}
-
-			++it;
-		}
-
-		*(uint16_t *) (keywords + (size - length - sizeof(uint16_t))) = length;
-	}
-	free(line);
+	KEYWORDS_READ(stdin)
 }
 
 static void write(FILE *const stream) {
-	fputs(HEADER, stream);
-	if (size >= sizeof(uint16_t)) {
-		nread = 0;
-		length = *(uint16_t *) keywords;
-		it = (char *) (keywords + sizeof(uint16_t));
-		while ((uint16_t) nread < length) {
-			fputc(*it, stream);
-
-			++it;
-			++nread;
-		}
-
-		n = length + sizeof(uint16_t);
-		while (n < size) {
-			fputc(',', stream);
-			fputc(' ', stream);
-
-			nread = 0;
-			length = *(uint16_t *) (keywords + n);
-			it = (char *) (keywords + n + sizeof(uint16_t));
-			while ((uint16_t) nread < length) {
-				fputc(*it, stream);
-
-				++it;
-				++nread;
-			}
-
-			n += length + sizeof(uint16_t);
-		}
-
-		fputc('\n', stream);
-	}
-	fputs(FOOTER, stream);
+	KEYWORDS_WRITE(stream)
 }
 #endif // KEYWORDS_IMPLEMENT_MAIN
 #endif // KEYWORDS_H

@@ -34,7 +34,7 @@ export const read = (require, keys, context) => {
 	return context;
 };
 
-export const log = (context) => ['soffice', 'java', 'javac', 'jar', 'port', 'URL', 'IN', 'OUT', 'length', 'timeout', 'starts'].forEach((key) => key === 'starts' ? context[key].forEach((start, i) => console.log(`starts[${i}] = ${start}`)) : console.log(`${key} = ${context[key]}`));
+export const log = (context) => ['soffice', 'java', 'javac', 'jar', 'port', 'URL', 'IN', 'OUT', 'length', 'timeout', 'starts'].forEach((key) => key === 'starts' ? context[key].forEach((start, i) => console.log(`starts[${i}] = ${start.join(' ')}`)) : console.log(`${key} = ${context[key]}`));
 
 export const format = ({ URL, IN, OUT, length, timeout, starts }) =>
 `import com.sun.star.awt.Rectangle;
@@ -181,7 +181,7 @@ public final class Main implements Runnable {
 			xFrame.setName("newly created 1");
 
 			XComponentLoader xComponentLoader = UnoRuntime.queryInterface(XComponentLoader.class, desktop);
-			XComponent xTemplateComponent = xComponentLoader.loadComponentFromURL("file:///" + new File(IN).getCanonicalPath().replace('\\', '/'), "newly created 1", FrameSearchFlag.CHILDREN, new PropertyValue[0]);
+			XComponent xTemplateComponent = xComponentLoader.loadComponentFromURL("file:///" + new File(IN).getCanonicalPath().replace('\\\\', '/'), "newly created 1", FrameSearchFlag.CHILDREN, new PropertyValue[0]);
 			xWindow.setVisible(false);
 
 			XBookmarksSupplier xBookmarksSupplier = UnoRuntime.queryInterface(XBookmarksSupplier.class, xTemplateComponent);
@@ -192,7 +192,7 @@ public final class Main implements Runnable {
 			XTextRange xBookmarkRange = xBookmarkContent.getAnchor();
 			xBookmarkRange.setString(this.keywords);
 
-			String outURL = "file:///" + new File(OUT).getCanonicalPath().replace('\\', '/');
+			String outURL = "file:///" + new File(OUT).getCanonicalPath().replace('\\\\', '/');
 			PropertyValue[] propertyValue = new PropertyValue[2];
 			propertyValue[0] = new PropertyValue();
 			propertyValue[0].Name = "FilterName";
