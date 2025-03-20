@@ -22,9 +22,11 @@ Afterwards, select a target to build, and create `config.json`.
 
 Currently, the following targets are supported:
 
+- `groff/c`
 - `libreoffice/cxx`
 - `libreoffice/java`
 - `libreoffice/python`
+- `pandoc/c`
 
 To create `config.json`, see the `README.md` in the corresponding folder.
 

@@ -3,6 +3,10 @@ const { basename, join, relative } = require('node:path');
 const { argv, cwd, env, exit } = require('node:process');
 
 const targets = {
+	'groff/c': {
+		directory: 'groff/c',
+		file: 'Main.c',
+	},
 	'libreoffice/cxx': {
 		directory: 'libreoffice/cxx',
 		file: 'Main.cxx',
@@ -15,10 +19,14 @@ const targets = {
 		directory: 'libreoffice/python',
 		file: 'Main.py',
 	},
+	'pandoc/c': {
+		directory: 'pandoc/c',
+		file: 'Main.c',
+	},
 };
 
 function keys(config, keys) {
-	if (!(config instanceof Object) || config instanceof Array) {
+	if (!(config instanceof Object) || Array.isArray(config)) {
 		throw new TypeError('config is not an object');
 	}
 
@@ -99,7 +107,7 @@ function make(target) {
 		join,
 		string: (value) => String(value).trim(),
 		uint16: (value) => (new Uint16Array([Number(value)]))[0],
-		starts: (value) => value instanceof Array ? value.filter((start) => start instanceof Array && start.length > 0 && start.every((string) => typeof string === 'string' && string.trim().length > 0)) : [],
+		starts: (value) => Array.isArray(value) ? value.filter((start) => Array.isArray(start) && start.length > 0 && start.every((string) => typeof string === 'string' && string.trim().length > 0)) : [],
 	});
 
 	log(context);
